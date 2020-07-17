@@ -1,0 +1,65 @@
+params:
+  # Cosmo
+  omch2: 0.112225
+  ombh2: 0.022445
+  H0: 67.
+  ns: 0.96
+  As: 2.0e-9
+  tau: 0.06
+  mnu: 0.
+  # Nuisance (should all start with 'input_params_prefix')
+  shcl_wl_0_m: 0.0
+  shcl_wl_1_m: 0.0
+  shcl_wl_2_m: 0.0
+  shcl_wl_3_m: 0.0
+  shcl_wl_0_dz: 0.0
+  shcl_wl_1_dz: 0.0
+  shcl_wl_2_dz: 0.0
+  shcl_wl_3_dz: 0.0
+  shcl_A_IA: 0.0
+  shcl_eta_IA: 0.0
+
+# CCL settings
+clccl:
+  kmax: 10.
+  transfer_function: boltzmann_camb
+  matter_power_spectrum: halofit
+  baryons_power_spectrum: nobaryons
+
+# Likelihood settings
+shcl:
+  # Input sacc file
+  input_file: test_data/cls_shear.fits
+  # List all relevant bins
+  bins:
+    - name: wl_0
+    - name: wl_1
+    - name: wl_2
+    - name: wl_3
+  # List all 2-points that should go into the
+  # data vector
+  twopoints:
+    - bins: [wl_0, wl_0]
+    - bins: [wl_0, wl_1]
+      lmin: 200
+    - bins: [wl_0, wl_2]
+    - bins: [wl_0, wl_3]
+    - bins: [wl_1, wl_1]
+    - bins: [wl_1, wl_2]
+    - bins: [wl_1, wl_3]
+    - bins: [wl_2, wl_2]
+    - bins: [wl_2, wl_3]
+    - bins: [wl_3, wl_3]
+      lmax: 2000
+  # Default scale cuts
+  defaults:
+    lmax: 1000
+    lmin: 10
+  # Prefix associated to all nuisance params
+  input_params_prefix: shcl
+  # IADESY1, IAPerBin or IANone
+  ia_model: IADESY1
+  # NzShift or NzNone
+  nz_model: NzShift
+  # PkDefault, PkHModel
+  pk_model: PkDefault

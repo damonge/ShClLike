@@ -14,7 +14,7 @@ l_eff = (np.arange(n_bpw) + 0.5)*d_ell
 n_ell = len(ells)
 
 # Cosmology
-cosmo = ccl.Cosmology(Omega_c=0.25, Omega_b=0.05, h=0.67, n_s=0.96, A_s=2E-9)
+cosmo = ccl.Cosmology(Omega_c=0.25, Omega_b=0.05, h=0.67, n_s=0.96, A_s=2E-9, T_CMB=2.7255)
 
 # N(z)s
 z_centers = [0.4, 0.7, 1.0, 1.3]

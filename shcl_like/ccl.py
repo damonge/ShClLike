@@ -11,7 +11,8 @@ class CCL(Theory):
               'Omega_b': None,
               'h': None,
               'n_s': None,
-              'A_sE9': None}
+              'A_sE9': None,
+              'm_nu': None}
 
     def initialize(self):
         self._required_results = {}
@@ -40,6 +41,8 @@ class CCL(Theory):
                               h=self.provider.get_param('h'),
                               n_s=self.provider.get_param('n_s'),
                               A_s=self.provider.get_param('A_sE9')*1E-9,
+                              T_CMB=2.7255,
+                              m_nu=self.provider.get_param('m_nu'),
                               transfer_function=self.transfer_function,
                               matter_power_spectrum=self.matter_power_spectrum,
                               baryons_power_spectrum=self.baryons_power_spectrum)

@@ -5,6 +5,7 @@ params:
   h: 0.67
   n_s: 0.96
   A_sE9: 2.0
+  m_nu: 0.
   # Nuisance (should all start with 'input_params_prefix')
   shcl_wl_0_m: 0.0
   shcl_wl_1_m: 0.0
