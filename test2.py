@@ -3,7 +3,7 @@ from shcl_like.clccl import CLCCL
 from cobaya.model import get_model
 import yaml
 
-                
+
 info = {'params': {},
         'likelihood': {'shcl':
                        {'external': ShClLike}},

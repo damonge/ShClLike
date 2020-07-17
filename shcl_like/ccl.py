@@ -1,44 +1,54 @@
 """
-Simple CCL theory wrapper that returns the cosmology object and optionally a number of methods depending only on that object.
+Simple CCL theory wrapper that returns the cosmology object
+and optionally a number of methods depending only on that
+object.
 
-This is based on an earlier implementation by Antony Lewis: https://github.com/cmbant/SZCl_like/blob/methods/szcl_like/ccl.py
+This is based on an earlier implementation by Antony Lewis:
+https://github.com/cmbant/SZCl_like/blob/methods/szcl_like/ccl.py
 
-`get_CCL` results a dictionary of results, where `results['cosmo']` is the CCL cosmology object.
+`get_CCL` results a dictionary of results, where `results['cosmo']`
+is the CCL cosmology object.
 
-Classes that need other CCL-computed results (without additional free parameters), should
-pass them in the requirements list.
+Classes that need other CCL-computed results (without additional
+free parameters), should pass them in the requirements list.
 
-e.g. a `Likelihood` with `get_requirements()` returning `{'CCL': {'methods:{'name': self.method}}}`
-[where self is the Likelihood instance] will have `results['name']` set to the result
-of `self.method(cosmo)` being called with the CCL cosmo object.
+e.g. a `Likelihood` with `get_requirements()` returning
+`{'CCL': {'methods:{'name': self.method}}}`
+[where self is the Likelihood instance] will have
+`results['name']` set to the result
+of `self.method(cosmo)` being called with the CCL cosmo
+object.
 
-The `Likelihood` class can therefore handle for itself which results specifically it needs from CCL,
-and just give the method to return them (to be called and cached by Cobaya with the right
-parameters at the appropriate time).
+The `Likelihood` class can therefore handle for itself which
+results specifically it needs from CCL, and just give the
+method to return them (to be called and cached by Cobaya with
+the right parameters at the appropriate time).
 
-Alternatively the `Likelihood` can compute what it needs from `results['cosmo']`, however in this
-case it will be up to the `Likelihood` to cache the results appropriately itself.
+Alternatively the `Likelihood` can compute what it needs from
+`results['cosmo']`, however in this case it will be up to the
+`Likelihood` to cache the results appropriately itself.
 
-Note that this approach precludes sharing results other than the cosmo object itself between different likelihoods.
+Note that this approach precludes sharing results other than
+the cosmo object itself between different likelihoods.
 
-Also note lots of things still cannot be done consistently in CCL, so this is far from general.
+Also note lots of things still cannot be done consistently
+in CCL, so this is far from general.
 """
 
-
-import numpy as np
 import pyccl as ccl
 from cobaya.theory import Theory
 
 
 class CCL(Theory):
     """
-    This implements CCL as a `Theory` object that takes in cosmological parameters
-    directly (i.e. cannot be used downstream from camb/CLASS.
+    This implements CCL as a `Theory` object that takes in
+    cosmological parameters directly (i.e. cannot be used
+    downstream from camb/CLASS.
     """
     # CCL options
     transfer_function: str = 'boltzmann_camb'
-    matter_power_spectrum: str = 'halofit'
-    baryons_power_spectrum: str = 'nobaryons'
+    matter_pk: str = 'halofit'
+    baryons_pk: str = 'nobaryons'
     # Params it can accept
     params = {'Omega_c': None,
               'Omega_b': None,
@@ -57,7 +67,8 @@ class CCL(Theory):
         # requirements is dictionary of things requested by likelihoods
         # Note this may be called more than once
 
-        # CCL currently has no way to infer the required inputs from the required outputs
+        # CCL currently has no way to infer the required inputs from
+        # the required outputs
         # So a lot of this is fixed
         if 'CCL' not in requirements:
             return {}
@@ -85,8 +96,8 @@ class CCL(Theory):
                               T_CMB=2.7255,
                               m_nu=self.provider.get_param('m_nu'),
                               transfer_function=self.transfer_function,
-                              matter_power_spectrum=self.matter_power_spectrum,
-                              baryons_power_spectrum=self.baryons_power_spectrum)
+                              matter_power_spectrum=self.matter_pk,
+                              baryons_power_spectrum=self.baryons_pk)
 
         state['CCL'] = {'cosmo': cosmo}
         # Compute sigma8 (we should actually only do this if required -- TODO)

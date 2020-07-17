@@ -45,7 +45,6 @@ class ShClLike(Likelihood):
             if b['name'] not in s.tracers:
                 raise LoggedError(self.log, "Unknown tracer %s" % b['name'])
             t = s.tracers[b['name']]
-            z_mean = np.sum(t.z*t.nz)/np.sum(t.nz)
             self.bin_properties[b['name']] = {'z_fid': t.z,
                                               'nz_fid': t.nz}
 
@@ -104,11 +103,12 @@ class ShClLike(Likelihood):
         # Ell max/min are set by the bandpower window ells.
         # It currently uses simple log-spacing.
         # nl_per_decade is currently fixed at 30
-        if self.l_min_sample == 0 :
+        if self.l_min_sample == 0:
             l_min_sample_here = 2
         else:
             l_min_sample_here = self.l_min_sample
-        nl_sample = int(np.log10(self.l_max_sample / l_min_sample_here) * nl_per_decade)
+        nl_sample = int(np.log10(self.l_max_sample / l_min_sample_here) *
+                        nl_per_decade)
         l_sample = np.unique(np.geomspace(l_min_sample_here,
                                           self.l_max_sample,
                                           nl_sample).astype(int)).astype(float)
@@ -152,7 +152,8 @@ class ShClLike(Likelihood):
                 eta = pars[self.input_params_prefix + '_eta_IA']
                 A_IA = A0 * ((1+z)/1.62)**eta
             else:
-                raise LoggedError(self.log, "Unknown IA model %s" % self.ia_model)
+                raise LoggedError(self.log, "Unknown IA model %s" %
+                                  self.ia_model)
             return (z, A_IA)
 
     def _get_tracer(self, cosmo, name, **pars):
@@ -180,7 +181,8 @@ class ShClLike(Likelihood):
                                           normprof1=True)
             return pk2d
         else:
-            raise LoggedError("Unknown power spectrum model %s" % self.pk_model)
+            raise LoggedError("Unknown power spectrum model %s" %
+                              self.pk_model)
 
     def _get_cl_wl(self, cosmo, pk, **pars):
         # Compute all C_ells without multiplicative bias
@@ -200,7 +202,7 @@ class ShClLike(Likelihood):
         res = self.provider.get_CCL()
         cosmo = res['cosmo']
         pk = res['pk']
-        cls =  self._get_cl_wl(cosmo, pk, **pars)
+        cls = self._get_cl_wl(cosmo, pk, **pars)
         cl_out = np.zeros(self.ndata)
         for clm, cl in zip(self.cl_meta, cls):
             m1 = pars[self.input_params_prefix + '_' + clm['bin_1'] + '_m']

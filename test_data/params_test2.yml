@@ -23,8 +23,8 @@ params:
 clccl:
   kmax: 10.
   transfer_function: boltzmann_camb
-  matter_power_spectrum: halofit
-  baryons_power_spectrum: nobaryons
+  matter_pk: halofit
+  baryons_pk: nobaryons
 
 # Likelihood settings
 shcl:

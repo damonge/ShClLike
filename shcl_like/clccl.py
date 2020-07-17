@@ -1,9 +1,13 @@
 """
-Simple CCL theory wrapper that returns the cosmology object and optionally a number of methods depending only on that object.
+Simple CCL theory wrapper that returns the cosmology object and
+ optionally a number of methods depending only on that object.
 
-This is based on an earlier implementation by Antony Lewis: https://github.com/cmbant/SZCl_like/blob/methods/szcl_like/ccl.py
+This is based on an earlier implementation by Antony Lewis:
+ https://github.com/cmbant/SZCl_like/blob/methods/szcl_like/ccl.py
 
-This version is like the `CCL` class implemented in `ccl.py`, but this one is cosmology-less in the sense that the primary cosmological quantities (distances and P(k)) are taken externally.
+This version is like the `CCL` class implemented in `ccl.py`, but
+ this one is cosmology-less in the sense that the primary
+ cosmological quantities (distances and P(k)) are taken externally.
 """
 
 import numpy as np
@@ -26,8 +30,8 @@ class CLCCL(Theory):
     z_bg: Union[Sequence, np.ndarray] = []
     # CCL options
     transfer_function: str = 'boltzmann_camb'
-    matter_power_spectrum: str = 'halofit'
-    baryons_power_spectrum: str = 'nobaryons'
+    matter_pk: str = 'halofit'
+    baryons_pk: str = 'nobaryons'
     # If True, CCL will take P(k)s from an upstream camb/CLASS object.
     external_nonlin_pk: bool = True
 
@@ -65,17 +69,22 @@ class CLCCL(Theory):
 
         # Power spectra
         if self.kmax:
-            self.external_nonlin_pk = self.external_nonlin_pk or options.get('external_nonlin_pk',
-                                                                             False)
-            # CCL currently only supports ('delta_tot', 'delta_tot'), but call allow
-            # general as placeholder
+            self.external_nonlin_pk = (self.external_nonlin_pk or
+                                       options.get('external_nonlin_pk',
+                                                   False))
+            # CCL currently only supports ('delta_tot', 'delta_tot'), but call
+            # allow general as placeholder
             self._var_pairs.update(
                 set((x, y) for x, y in
                     options.get('vars_pairs', [('delta_tot', 'delta_tot')])))
 
+            if self.external_nonlin_pk:
+                nonlin = (True, False)
+            else:
+                nonlin = False
             needs['Pk_grid'] = {
                 'vars_pairs': self._var_pairs or [('delta_tot', 'delta_tot')],
-                'nonlinear': (True, False) if self.external_nonlin_pk else False,
+                'nonlinear': nonlin,
                 'z': self.z_pk,
                 'k_max': self.kmax}
 
@@ -116,8 +125,8 @@ class CLCCL(Theory):
                               T_CMB=2.7255,
                               m_nu=self.provider.get_param('mnu'),
                               transfer_function=self.transfer_function,
-                              matter_power_spectrum=self.matter_power_spectrum,
-                              baryons_power_spectrum=self.baryons_power_spectrum)
+                              matter_power_spectrum=self.matter_pk,
+                              baryons_power_spectrum=self.baryons_pk)
         cosmo._set_background_from_arrays(a_array=a,
                                           chi_array=distance,
                                           hoh0_array=E_of_z)
@@ -125,13 +134,15 @@ class CLCCL(Theory):
         # Populate P(k)
         if self.kmax:
             for pair in self._var_pairs:
-                k, z, Pk_lin = self.provider.get_Pk_grid(var_pair=pair, nonlinear=False)
+                k, z, Pk_lin = self.provider.get_Pk_grid(var_pair=pair,
+                                                         nonlinear=False)
                 Pk_lin = np.flip(Pk_lin, axis=0)
                 a = 1./(1+np.flip(z))
                 cosmo._set_linear_power_from_arrays(a, k, Pk_lin)
 
                 if self.external_nonlin_pk:
-                    k, z, Pk_nl = self.provider.get_Pk_grid(var_pair=pair, nonlinear=True)
+                    k, z, Pk_nl = self.provider.get_Pk_grid(var_pair=pair,
+                                                            nonlinear=True)
                     Pk_nl = np.flip(Pk_nl, axis=0)
                     a = 1./(1+np.flip(z))
                     cosmo._set_nonlin_power_from_arrays(a, k, Pk_nl)
