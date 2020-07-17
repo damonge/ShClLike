@@ -6,20 +6,38 @@ from scipy.interpolate import interp1d
 
 
 class ShClLike(Likelihood):
+    # All parameters starting with this will be
+    # identified as belonging to this stage.
     input_params_prefix: str = ""
+    # Input sacc file
     input_file: str = ""
+    # IA model name. Currently all of these are
+    # just flags, but we could turn them into
+    # homogeneous systematic classes.
     ia_model: str = "IANone"
+    # N(z) model name
     nz_model: str = "NzNone"
+    # P(k) model name
     pk_model: str = "PkDefault"
+    # List of bin names
     bins: list = []
+    # List of default settings (currently only scale cuts)
     defaults: dict = {}
+    # List of two-point functions that make up the data vector
     twopoints: list = []
 
     def initialize(self):
+        # Read SACC file
         self._read_data()
+        # Ell sampling for interpolation
         self._get_ell_sampling()
 
     def _read_data(self):
+        # Reads sacc file
+        # Selects relevant data.
+        # Applies scale cuts
+        # Reads tracer metadata (N(z))
+        # Reads covariance
         import sacc
         s = sacc.Sacc.load_fits(self.input_file)
         self.bin_properties = {}
@@ -82,6 +100,10 @@ class ShClLike(Likelihood):
         self.ndata = len(self.data_vec)
 
     def _get_ell_sampling(self, nl_per_decade=30):
+        # Selects ell sampling.
+        # Ell max/min are set by the bandpower window ells.
+        # It currently uses simple log-spacing.
+        # nl_per_decade is currently fixed at 30
         if self.l_min_sample == 0 :
             l_min_sample_here = 2
         else:
@@ -96,12 +118,15 @@ class ShClLike(Likelihood):
             self.l_sample = l_sample
 
     def _eval_interp_cl(self, cl_in, l_bpw, w_bpw):
+        # Interpolates spectrum and evaluates it at bandpower window
+        # ell values.
         f = interp1d(self.l_sample, cl_in)
         cl_unbinned = f(l_bpw)
         cl_binned = np.dot(w_bpw, cl_unbinned)
         return cl_binned
 
     def _get_nz(self, cosmo, name, **pars):
+        # Get an N(z) for tracer with name `name`
         z = self.bin_properties[name]['z_fid']
         nz = self.bin_properties[name]['nz_fid']
         if self.nz_model == 'NzShift':
@@ -114,6 +139,7 @@ class ShClLike(Likelihood):
         return (z, nz)
 
     def _get_ia_bias(self, cosmo, name, **pars):
+        # Get an IA amplitude for tracer with name `name`
         if self.ia_model == 'IANone':
             return None
         else:
@@ -130,12 +156,14 @@ class ShClLike(Likelihood):
             return (z, A_IA)
 
     def _get_tracer(self, cosmo, name, **pars):
+        # Get CCL tracer for tracer with name `name`
         nz = self._get_nz(cosmo, name, **pars)
         ia = self._get_ia_bias(cosmo, name, **pars)
         t = ccl.WeakLensingTracer(cosmo, nz, ia_bias=ia)
         return t
 
     def _get_pk(self, cosmo):
+        # Get P(k) to integrate over
         if self.pk_model == 'PkDefault':
             return None
         elif self.pk_model == 'PkHModel':
@@ -155,6 +183,7 @@ class ShClLike(Likelihood):
             raise LoggedError("Unknown power spectrum model %s" % self.pk_model)
 
     def _get_cl_wl(self, cosmo, pk, **pars):
+        # Compute all C_ells without multiplicative bias
         trs = {}
         for tn in self.used_tracers:
             trs[tn] = self._get_tracer(cosmo, tn, **pars)
@@ -167,6 +196,7 @@ class ShClLike(Likelihood):
         return cls
 
     def _get_theory(self, **pars):
+        # Compute theory vector
         res = self.provider.get_CCL()
         cosmo = res['cosmo']
         pk = res['pk']
@@ -180,9 +210,15 @@ class ShClLike(Likelihood):
         return cl_out
 
     def get_requirements(self):
+        # By selecting `self._get_pk` as a `method` of CCL here,
+        # we make sure that this function is only run when the
+        # cosmological parameters vary.
         return {'CCL': {'methods': {'pk': self._get_pk}}}
 
     def logp(self, **pars):
+        """
+        Simple Gaussian likelihood.
+        """
         t = self._get_theory(**pars)
         r = t - self.data_vec
         chi2 = np.dot(r, self.inv_cov.dot(r))
