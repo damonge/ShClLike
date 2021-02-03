@@ -15,7 +15,6 @@ import pyccl as ccl
 from typing import Sequence, Union
 from cobaya.theory import Theory
 
-
 class CLCCL(Theory):
     """
     This implements CCL as a `Theory` object in a Cosmology-Less way.
@@ -39,6 +38,12 @@ class CLCCL(Theory):
     _default_z_pk_sampling = np.linspace(0, 5, 100)
     _default_z_bg_sampling = np.concatenate((np.linspace(0, 10, 100),
                                              np.geomspace(10, 1500, 50)))
+
+    namedir = {'delta_tot': 'delta_matter'}
+
+    def _translate_camb(self, pair):
+        v1, v2 = pair
+        return self.namedir[v1]+':'+self.namedir[v2]
 
     def initialize(self):
         # Pairs of quantities for which we want P(k)
@@ -118,34 +123,49 @@ class CLCCL(Theory):
         Omega_b = self.provider.get_param('ombh2') / h**2
 
         # Generate cosmology and populate background
-        a = 1. / (1+self.z_bg[::-1])
-        cosmo = ccl.Cosmology(Omega_c=Omega_c, Omega_b=Omega_b, h=h,
-                              n_s=self.provider.get_param('ns'),
-                              A_s=self.provider.get_param('As'),
-                              T_CMB=2.7255,
-                              m_nu=self.provider.get_param('mnu'),
-                              transfer_function=self.transfer_function,
-                              matter_power_spectrum=self.matter_pk,
-                              baryons_power_spectrum=self.baryons_pk)
-        cosmo._set_background_from_arrays(a_array=a,
-                                          chi_array=distance,
-                                          hoh0_array=E_of_z)
+        a_bg = 1. / (1+self.z_bg[::-1]) 
 
-        # Populate P(k)
         if self.kmax:
+            pkln = {}
+            if self.external_nonlin_pk:
+                pknl = {}
             for pair in self._var_pairs:
+                name = self._translate_camb(pair)
                 k, z, Pk_lin = self.provider.get_Pk_grid(var_pair=pair,
                                                          nonlinear=False)
                 Pk_lin = np.flip(Pk_lin, axis=0)
                 a = 1./(1+np.flip(z))
-                cosmo._set_linear_power_from_arrays(a, k, Pk_lin)
+                pkln[name] = Pk_lin
+                pkln['a'] = a
+                pkln['k'] = k
 
                 if self.external_nonlin_pk:
                     k, z, Pk_nl = self.provider.get_Pk_grid(var_pair=pair,
                                                             nonlinear=True)
                     Pk_nl = np.flip(Pk_nl, axis=0)
                     a = 1./(1+np.flip(z))
-                    cosmo._set_nonlin_power_from_arrays(a, k, Pk_nl)
+                    pknl[name] = Pk_nl
+                    pknl['a'] = a
+                    pknl['k'] = k
+            cosmo = ccl.CosmologyCalculator(Omega_c=Omega_c, Omega_b=Omega_b, h=h,
+                                            n_s=self.provider.get_param('ns'),
+                                            A_s=self.provider.get_param('As'),
+                                            T_CMB=2.7255,
+                                            m_nu=self.provider.get_param('mnu'),
+                                            background={'a': a_bg,
+                                                        'chi': distance,
+                                                        'h_over_h0': E_of_z},
+                                            pk_linear=pkln,
+                                            pk_nonlin=pknl)
+        else:
+            cosmo = ccl.CosmologyCalculator(Omega_c=Omega_c, Omega_b=Omega_b, h=h,
+                                            n_s=self.provider.get_param('ns'),
+                                            A_s=self.provider.get_param('As'),
+                                            T_CMB=2.7255,
+                                            m_nu=self.provider.get_param('mnu'),
+                                            background={'a': a_bg,
+                                                        'chi': distance,
+                                                        'h_over_h0': E_of_z})
 
         state['CCL'] = {'cosmo': cosmo}
         # Compute sigma8 (we should actually only do this if required -- TODO)

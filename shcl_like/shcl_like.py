@@ -80,6 +80,7 @@ class ShClLike(Likelihood):
                 self.l_min_sample = np.amin(bpw.values)
             if np.amax(bpw.values) > self.l_max_sample:
                 self.l_max_sample = np.amax(bpw.values)
+
             self.cl_meta.append({'bin_1': cl['bins'][0],
                                  'bin_2': cl['bins'][1],
                                  'l_eff': l,
@@ -110,8 +111,9 @@ class ShClLike(Likelihood):
         nl_sample = int(np.log10(self.l_max_sample / l_min_sample_here) *
                         nl_per_decade)
         l_sample = np.unique(np.geomspace(l_min_sample_here,
-                                          self.l_max_sample,
+                                          self.l_max_sample+1,
                                           nl_sample).astype(int)).astype(float)
+
         if self.l_min_sample == 0:
             self.l_sample = np.concatenate((np.array([0.]), l_sample))
         else:
