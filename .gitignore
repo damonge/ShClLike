@@ -1,0 +1,5 @@
+__pycache__
+*.pyc
+shcl_like_cosmosis/chain.txt
+shcl_like_cosmosis/plots/
+shcl_like_cosmosis/output/
